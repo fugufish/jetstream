@@ -7,7 +7,10 @@ defmodule Jetstream.Application do
       |> Enum.into(%{})
 
     children = [
-      {Gnat, connection_config}
+      %{
+        id: GnatConnection,
+        start: {Gnat, :start_link, [connection_config, [name: GnatConnection]]}
+      }
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)

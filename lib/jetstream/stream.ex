@@ -1,8 +1,9 @@
-defmodule Jetstream.API.Stream do
-  import Jetstream.API.Util
+defmodule Jetstream.Stream do
+  import Jetstream.Util
 
   @enforce_keys [:name, :subjects]
   @derive Jason.Encoder
+
   defstruct name: nil,
             subjects: [],
             max_age: 0,
@@ -55,40 +56,49 @@ defmodule Jetstream.API.Stream do
   @type create_stream_response :: {:ok, stream_response()} | {:error, any()}
 
   @doc """
-  Create a new stream, please see https://github.com/nats-io/jetstream#streams 
+  Creates a NATS stream. See https://github.com/nats-io/jetstream#streams 
   for details on supported arguments
   """
-  @spec create(Gnat.t(), t()) :: {:ok, stream_response()} | {:error, any()}
-  def create(conn, %__MODULE__{} = stream) do
+  @spec create(stream :: t()) :: create_stream_response()
+  def create(stream) do
     with :ok <- validate(stream),
          {:ok, stream} <-
-           request(conn, "$JS.API.STREAM.CREATE.#{stream.name}", Jason.encode!(stream)) do
+           request("$JS.API.STREAM.CREATE.#{stream.name}", Jason.encode!(stream)) do
       {:ok, to_stream_response(stream)}
     end
   end
 
-  @spec delete(Gnat.t(), binary()) :: :ok | {:error, any()}
-  def delete(conn, stream_name) when is_binary(stream_name) do
-    with {:ok, _response} <- request(conn, "$JS.API.STREAM.DELETE.#{stream_name}", "") do
+  @doc """
+  Deletes the named stream.
+  """
+  @spec delete(binary()) :: :ok | {:error, any()}
+  def delete(stream_name) when is_binary(stream_name) do
+    with {:ok, _response} <- request("$JS.API.STREAM.DELETE.#{stream_name}", "") do
       :ok
     end
   end
 
-  @spec info(Gnat.t(), binary()) :: {:ok, stream_response()} | {:error, any()}
-  def info(conn, stream_name) when is_binary(stream_name) do
-    with {:ok, decoded} <- request(conn, "$JS.API.STREAM.INFO.#{stream_name}", "") do
+  @doc """
+  Returns information about the specified stream.
+  """
+  @spec info(binary()) :: {:ok, stream_response()} | {:error, any()}
+  def info(stream_name) when is_binary(stream_name) do
+    with {:ok, decoded} <- request("$JS.API.STREAM.INFO.#{stream_name}", "") do
       {:ok, to_stream_response(decoded)}
     end
   end
 
-  @spec list(Gnat.t(), offset: non_neg_integer()) :: {:ok, streams()} | {:error, term()}
-  def list(conn, params \\ []) do
+  @doc """
+  Lists existing streams.
+  """
+  @spec list(offset: non_neg_integer()) :: {:ok, streams()} | {:error, term()}
+  def list(params \\ []) do
     payload =
       Jason.encode!(%{
         offset: Keyword.get(params, :offset, 0)
       })
 
-    with {:ok, decoded} <- request(conn, "$JS.API.STREAM.NAMES", payload) do
+    with {:ok, decoded} <- request("$JS.API.STREAM.NAMES", payload) do
       result = %{
         limit: Map.get(decoded, "limit"),
         offset: Map.get(decoded, "offset"),

@@ -29,7 +29,8 @@ defmodule Jetstream.MixProject do
     [
       {:gnat, "~> 1.1"},
       {:jason, "~> 1.1"},
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 
